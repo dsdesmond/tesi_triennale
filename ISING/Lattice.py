@@ -50,6 +50,11 @@ class Lattice(object):
         #N**2 is the required length of time between visualisations as in the lecture notes
         self.sweep_size = self.N**2
 
+        if type(lattice) == str:
+            self.nome_config = lattice
+        else:
+            self.nome_config = "custom"
+
         #define dynamice from input
         if dynamics == "Glauber":
             self.dynamics = self.glauber
@@ -65,6 +70,9 @@ class Lattice(object):
                 self.lattice = lattice
             else:
                 print("input lattice must be correct shape!!")
+
+
+        #tipi di reticoli disponibili
         
         elif lattice == "uniform":
             #assume uniform
@@ -73,12 +81,63 @@ class Lattice(object):
             self.lattice = self.ground_generate()
         elif lattice == "halved":
             self.lattice = self.halved_generate()
+        elif lattice == "circle":
+            self.lattice = self.circle_generate()
+        elif lattice == "edges":
+            self.lattice = self.edges_generate()
+
         else:
             print("your lattice input is wrong")
         #print(self.lattice)
             
         
+    
+
+    def circle_generate(self):
+
+        """
+        Genera un reticolo con tutti spin SU (+1) e un cerchio centrale di spin GIU (-1).
+        """
+
+        # partiamo da un reticolo tutto a +1
+        a = np.ones((self.N, self.N))
         
+        # raggio è un quarto della grandezza totale
+        centro = self.N // 2
+        raggio = self.N // 4  
+        
+        
+        for i in range(self.N):
+            for j in range(self.N):
+                # equazione del cerchio: (x-x0)^2 + (y-y0)^2 <= r^2
+                if (i - centro)**2 + (j - centro)**2 <= raggio**2:
+                    a[i, j] = -1
+                    
+        return a
+
+    def edges_generate(self):
+
+        """
+        Genera un reticolo con spin SU (+1) all'interno e spin GIU (-1) solo sui bordi da spessore variabile.
+        """
+
+        spessore = 2
+
+        # partiamo da un reticolo tutto a +1
+        a = np.ones((self.N, self.N))
+        
+        # q -1 prime e ultime righe in base allo spessore
+        a[0:spessore, :] = -1
+        a[-spessore:, :] = -1
+        
+        # a -1 prime e ultime colonne in base allo spessore
+        a[:, 0:spessore] = -1
+        a[:, -spessore:] = -1
+        
+        return a
+
+
+
        
     def halved_generate(self):
         """
@@ -141,6 +200,7 @@ class Lattice(object):
         a = np.ones((self.N,self.N))
         return a
     
+
     
     def glauber(self):
 
@@ -420,79 +480,154 @@ class Lattice(object):
         #E = -S11 * (S01+S10,S21,S12)
         #use mod (%) for periodic boundary conditions
         return  -self.lattice[flip_coords[0],flip_coords[1]]*(self.lattice[flip_coords[0]-1,flip_coords[1]]+self.lattice[flip_coords[0],flip_coords[1]-1]+self.lattice[(flip_coords[0]+1)%self.N,flip_coords[1]]+self.lattice[flip_coords[0],(flip_coords[1]+1)%self.N])
+
+
+
+
+    def save_photo(self, step_name):
+
     
-    
-    def plot_lattice(self): 
+        """Salva una foto del reticolo in formato PNG in simulation_photo"""
 
-
-        """
-        Function to plot the lattice
-
-        This function uses pyplot not gnuplot or other.
-        It does not write to file to simplify the procedure.
-        It plots directly from self.lattice.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """
-
-        plt.cla()
-        plt.imshow(self.lattice, animated=True)
-        plt.draw()
-        plt.pause(0.01)
+        import os
         
-        
-        
-    def run(self,wait_sweeps = 100, num_tot_sweeps = 1000, plot_anim = True):
+        cartella = "simulation_photo"
+        if not os.path.exists(cartella):
+            os.makedirs(cartella)
 
+        
+        plt.clf()
+
+        # Usa cmap='coolwarm' per mappare +1 in rosso e -1 in blu
+        plt.imshow(self.lattice, cmap='coolwarm', vmin=-1, vmax=1)
+        plt.title(f"T = {self.T} | Config: {self.nome_config} | Sweep = {step_name}")
+
+        # Salviamo la foto DENTRO la cartella
+        percorso_file = f"{cartella}/foto_{self.nome_config}_T{self.T}_step_{step_name}.png"
+        plt.savefig(percorso_file)
+
+
+
+
+    def run(self, wait_sweeps=100, num_tot_sweeps=1000, plot_anim=True):
+
+        
         """
-         Function to run full dynamics given simulation inputs.
-         It uses the specified dynamics of the system and simply loops through when required.
+        Funzione modificata per scattare foto durante l'evoluzione
+        """
 
-         Parameters
-         ----------
-         wait_sweeps : int
-             number of sweeps to wait before starting measurements
+        sweeps_to_photo = [0, 50, 100, 500, 1000]   #sweeps da fotografare
 
-        num_total_sweeps : int
-            number of total sweeps to run
-        plot_anim : bool
-            whether or not to animate as it runs. Saves time on long simulations to not animate.
+        # 1. foto configurazione iniziale (sweep 0)
+        if plot_anim and 0 in sweeps_to_photo:
+            self.save_photo("000_iniziale")
 
-         Returns
-         -------
+        # loop for required number of sweeps
+        for i in range(num_tot_sweeps * self.sweep_size):
+            if i % self.sweep_size == 0:
+                sweep_corrente = i // self.sweep_size
+                
+                # 2. Foto intermedie (solo se lo sweep_corrente è nella lista)
+                if plot_anim and sweep_corrente > 0 and sweep_corrente in sweeps_to_photo:
+                    self.save_photo(f"{sweep_corrente:03d}")
 
-         """
-
-
-        #loop for required number of sweeps
-        for i in range(num_tot_sweeps*self.sweep_size):
-            #self.N**2 is the required length of time between visualisations as in the lecture notes
-            if i%self.sweep_size == 0:
-                #if it is time to take a measurement
-                if i%(self.sweep_size*10) == 0 and i > wait_sweeps*self.sweep_size:
-
-
-                    self.sweep_list.append(i/self.sweep_size )
+                # (Manteniamo il calcolo termodinamico originale)
+                if i % (self.sweep_size * 10) == 0 and i > wait_sweeps * self.sweep_size:
+                    self.sweep_list.append(i / self.sweep_size)
                     self.find_magnetisation()
                     self.compute_tot_E()
-                    #plot animation if required
-                    if plot_anim:
-                        self.plot_lattice()
-                #print every 100 sweeps to check the sim progress
-                if i%(self.sweep_size*100) == 0:
-                    print(i/self.sweep_size)
-            #run dynamics
+                
+                # Stampa a terminale per capire a che punto siamo 
+                if i % (self.sweep_size * 100) == 0:
+                    print(f"Sweep completati: {sweep_corrente}/{num_tot_sweeps}")
+                    
+            # run dynamics
             self.dynamics()
+            
+        # 3. foto finale
+        if plot_anim and num_tot_sweeps in sweeps_to_photo:
+            self.save_photo(f"{num_tot_sweeps:03d}_finale")
+
+
+
+
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+    # def plot_lattice(self): 
+
+
+    #     """
+    #     Function to plot the lattice
+
+    #     This function uses pyplot not gnuplot or other.
+    #     It does not write to file to simplify the procedure.
+    #     It plots directly from self.lattice.
+
+    #     Parameters
+    #     ----------
+
+    #     Returns
+    #     -------
+
+    #     """
+
+    #     plt.cla()
+    #     plt.imshow(self.lattice, animated=True)
+    #     plt.draw()
+    #     plt.pause(0.01)
         
-
-
         
+        
+    # def run(self,wait_sweeps = 100, num_tot_sweeps = 1000, plot_anim = True):
 
-            
+    #     """
+    #      Function to run full dynamics given simulation inputs.
+    #      It uses the specified dynamics of the system and simply loops through when required.
+
+    #      Parameters
+    #      ----------
+    #      wait_sweeps : int
+    #          number of sweeps to wait before starting measurements
+
+    #     num_total_sweeps : int
+    #         number of total sweeps to run
+    #     plot_anim : bool
+    #         whether or not to animate as it runs. Saves time on long simulations to not animate.
+
+    #      Returns
+    #      -------
+
+    #      """
+
+
+    #     #loop for required number of sweeps
+    #     for i in range(num_tot_sweeps*self.sweep_size):
+    #         #self.N**2 is the required length of time between visualisations as in the lecture notes
+    #         if i%self.sweep_size == 0:
+    #             #if it is time to take a measurement
+    #             if i%(self.sweep_size*10) == 0 and i > wait_sweeps*self.sweep_size:
+
+
+    #                 self.sweep_list.append(i/self.sweep_size )
+    #                 self.find_magnetisation()
+    #                 self.compute_tot_E()
+    #                 #plot animation if required
+    #                 if plot_anim:
+    #                     self.plot_lattice()
+    #             #print every 100 sweeps to check the sim progress
+    #             if i%(self.sweep_size*100) == 0:
+    #                 print(i/self.sweep_size)
+    #         #run dynamics
+    #         self.dynamics()

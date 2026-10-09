@@ -5,7 +5,8 @@ import numpy as np
 
 #matplotlib.use("module://backend_interagg")
     
-def main(T_low, N, num_sweeps, plot_anim = False, T_high = None, stepsize = None):
+# def main(T_low, N, num_sweeps, plot_anim = False, T_high = None, stepsize = None): vecchia funzione main
+def main(T, N, num_sweeps, plot_anim = False, start_config = "uniform"):
     """
     Function to run Glauber dynamics on an ising lattice.
 
@@ -36,14 +37,14 @@ def main(T_low, N, num_sweeps, plot_anim = False, T_high = None, stepsize = None
 
 
 
-    if T_high is not None and stepsize is not None:
-        # make required range
-        T_arr = np.arange(T_low, T_high, stepsize)
+    # if T_high is not None and stepsize is not None:
+    #     # make required range
+    #     T_arr = np.arange(T_low, T_high, stepsize)
 
-    if T_high is None or stepsize is None:
-        #range isnt required
-        T_arr = np.asarray([int(T_low)])
-
+    # if T_high is None or stepsize is None:
+    #     #range isnt required
+    #     T_arr = np.asarray([float(T_low)])
+    #                                           questo blocco serviva per gestire range di temperatura,non mi interessa
 
 
     #define how many wait sweeps to do. Generally 100 was seen to be appropriate,
@@ -53,28 +54,31 @@ def main(T_low, N, num_sweeps, plot_anim = False, T_high = None, stepsize = None
     if wait_sweeps >= num_sweeps:
         wait_sweeps = num_sweeps//10
 
-    # loop through temperatures
-    lattices = []
-    for count, T in enumerate(T_arr):
+    # # loop through temperatures
+    # lattices = []
+    # for count, T in enumerate(T_arr):
 
-        # if temperature = 1, assume ground state
-        if T == 1:
-            L = Lattice(N,T, dynamics = "Glauber", lattice = "ground")#np.ones((N,N)))
-        else:
-            # use starting lattice from end of last lattice if not first loop
-            if count !=0:
-                L = Lattice(N,T, dynamics = "Glauber", lattice = lattices[-1].lattice)#np.ones((N,N)))
-            # if first loop assume uniform distribution
-            else:
-                L = Lattice(N,T, dynamics = "Glauber", lattice = "uniform")#np.ones((N,N)))
+    #     # if temperature = 1, assume ground state
+    #     if T == 1:
+    #         L = Lattice(N,T, dynamics = "Glauber", lattice = "ground")#np.ones((N,N)))
+    #     else:
+    #         # use starting lattice from end of last lattice if not first loop
+    #         if count !=0:
+    #             L = Lattice(N,T, dynamics = "Glauber", lattice = lattices[-1].lattice)#np.ones((N,N)))
+    #         # if first loop assume uniform distribution
+    #         else:
+    #             L = Lattice(N,T, dynamics = "Glauber", lattice = "uniform")#np.ones((N,N)))
 
-        L.run(wait_sweeps = wait_sweeps , num_tot_sweeps = num_sweeps , plot_anim = plot_anim)
+    #     L.run(wait_sweeps = wait_sweeps , num_tot_sweeps = num_sweeps , plot_anim = plot_anim)
 
-        #run simulation
-        lattices.append(L)
-        
+    #     #run simulation
+    #     lattices.append(L)
+    #                               questo blocco serviva per scegliere la configurazione in base alla temperatura, io non voglio questo
 
-        
+    L = Lattice(N, T, dynamics="Glauber", lattice=start_config)
+    L.run(wait_sweeps=wait_sweeps, num_tot_sweeps=num_sweeps, plot_anim=plot_anim)
+    lattices = [L]
+    T_arr = [T]  # Serve per non far rompere la funzione di salvataggio np.savetxt più in basso
 
     
     
@@ -108,20 +112,27 @@ def main(T_low, N, num_sweeps, plot_anim = False, T_high = None, stepsize = None
 
 
 
+# if __name__ == "__main__":        vecchia funzione per gestire input da terminale
+
+#     #if incorrect umbe rof arguments are given, state what arguments are expected for which process
+#     if len(sys.argv) != 7 and len(sys.argv) != 5:
+#         print("Usage for a single T: \n T (float), N (int), num_sweeps (int), plot_anim (bool)")
+#         print("Usage for a range of T: \n T_low (float), N (int), num_sweeps (int), plot_anim (bool), T_high (float), stepsize (int)")
+#         print("For further usage instructions, see README or documentation")
+#         sys.exit(1)
+
+#     #if only one Temperature is to be evaluated
+#     elif len(sys.argv) == 5:
+#         main(float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), eval(sys.argv[4]))
+#     #if a range of temperatures re to be evaluated
+#     elif len(sys.argv) == 7:
+#         main(float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), eval(sys.argv[4]), float(sys.argv[5]), float(sys.argv[6]))
+
+
 if __name__ == "__main__":
-
-    #if incorrect umbe rof arguments are given, state what arguments are expected for which process
-    if len(sys.argv) != 7 and len(sys.argv) != 5:
-        print("Usage for a single T: \n T (float), N (int), num_sweeps (int), plot_anim (bool)")
-        print("Usage for a range of T: \n T_low (float), N (int), num_sweeps (int), plot_anim (bool), T_high (float), stepsize (int)")
-        print("For further usage instructions, see README or documentation")
+    if len(sys.argv) != 6:
+        print("Uso corretto: python3 Glauber.py <T> <N> <num_sweeps> <Plot(True/False)> <Configurazione>")
         sys.exit(1)
-
-    #if only one Temperature is to be evaluated
-    elif len(sys.argv) == 5:
-        main(float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), eval(sys.argv[4]))
-    #if a range of temperatures re to be evaluated
-    elif len(sys.argv) == 7:
-        main(float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), eval(sys.argv[4]), float(sys.argv[5]), float(sys.argv[6]))
-
-
+    
+    # sys.argv[5] è la configurazione (es. "uniform")
+    main(float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), eval(sys.argv[4]), sys.argv[5])

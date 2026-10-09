@@ -43,7 +43,7 @@ def main(T_low, N = 50, num_sweeps = 1000, plot_anim = False, T_high = None, ste
     if T_high is None or stepsize is None:
         #range isnt required
         rang = False
-        T_arr = np.asarray([int(T_low)])
+        T_arr = np.asarray([float(T_low)])
 
 
 
