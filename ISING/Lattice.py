@@ -534,67 +534,66 @@ class Lattice(object):
 
     def save_photo(self, step_name):
 
-    
-        """Salva una foto del reticolo in formato PNG in simulation_photo"""
-
+        """
+        Salva la foto in sottocartelle ordinate per: 
+        Dinamica / Configurazione / Temperatura
+        """
         import os
         
-        cartella = "simulation_photo"
+        # percorso file
+        cartella = os.path.join("simulation_photo", self.dynamics.__name__, self.nome_config, f"T_{self.T}")
+        
+        # creo cartelle se non esistono
         if not os.path.exists(cartella):
             os.makedirs(cartella)
-
-        
+            
         plt.clf()
-
-        # Usa cmap='coolwarm' per mappare +1 in rosso e -1 in blu
         plt.imshow(self.lattice, cmap='coolwarm', vmin=-1, vmax=1)
-        plt.title(f"T = {self.T} | Config: {self.nome_config} | Sweep = {step_name}")
-
-        # Salviamo la foto DENTRO la cartella
-        percorso_file = f"{cartella}/foto_{self.nome_config}_T{self.T}_step_{step_name}.png"
+        
+        plt.title(f"{self.dynamics.__name__} | {self.nome_config} | T={self.T} | Sweep: {step_name}")
+        
+        # Salvo i vari step tutti dentro la cartella della temperatura
+        percorso_file = f"{cartella}/step_{step_name}.png"
         plt.savefig(percorso_file)
-
-
 
 
     def run(self, wait_sweeps=100, num_tot_sweeps=1000, plot_anim=True):
 
-        
         """
-        Funzione modificata per scattare foto durante l'evoluzione
+        Gestisce l'evoluzione temporale.
+        Scatta SEMPRE all'inizio (0) e SEMPRE alla fine (num_tot_sweeps).
         """
 
-        sweeps_to_photo = [0, 50, 100, 500, 10000]   #sweeps da fotografare
+        # lista sweep intermedi, UNICA COSA DA MODIFICARE (non serve mettere 0 e l'ultimo sweep)
+        sweeps_intermedi = [200, 500, 2000, 5000]
 
-        # 1. foto configurazione iniziale (sweep 0)
-        if plot_anim and 0 in sweeps_to_photo:
-            self.save_photo("000_iniziale")
+        # FOTO INIZIALE
+        if plot_anim:
+            self.save_photo("00000_iniziale")
 
         # loop for required number of sweeps
         for i in range(num_tot_sweeps * self.sweep_size):
             if i % self.sweep_size == 0:
                 sweep_corrente = i // self.sweep_size
                 
-                # 2. Foto intermedie (solo se lo sweep_corrente è nella lista)
-                if plot_anim and sweep_corrente > 0 and sweep_corrente in sweeps_to_photo:
-                    self.save_photo(f"{sweep_corrente:03d}")
+                # FOTO INTERMEDIE
+                if plot_anim and sweep_corrente > 0 and sweep_corrente in sweeps_intermedi:
+                    self.save_photo(f"{sweep_corrente:05d}")
 
-                # (Manteniamo il calcolo termodinamico originale)
                 if i % (self.sweep_size * 10) == 0 and i > wait_sweeps * self.sweep_size:
                     self.sweep_list.append(i / self.sweep_size)
                     self.find_magnetisation()
                     self.compute_tot_E()
                 
-                # Stampa a terminale per capire a che punto siamo 
                 if i % (self.sweep_size * 100) == 0:
                     print(f"Sweep completati: {sweep_corrente}/{num_tot_sweeps}")
                     
             # run dynamics
             self.dynamics()
             
-        # 3. foto finale
-        if plot_anim and num_tot_sweeps in sweeps_to_photo:
-            self.save_photo(f"{num_tot_sweeps:03d}_finale")
+        # 3. FOTO FINALE    
+        if plot_anim:
+            self.save_photo(f"{num_tot_sweeps:05d}_finale")
 
 
 
