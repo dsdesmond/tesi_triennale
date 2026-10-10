@@ -10,12 +10,14 @@ import matplotlib.pyplot as plt
     
     
 class Lattice(object):
+
     """
     Class for a Lattice object, which can be manipulated by either Glauber or Kawasaki dynamics after being initialised
     in a specified state.
-
     """
+
     def __init__(self, N, T, dynamics = "Glauber", lattice = None):
+
         """
         Initialisation function for Lattice class.
 
@@ -35,7 +37,6 @@ class Lattice(object):
 
         Returns
         -------
-
 
         """
 
@@ -62,8 +63,10 @@ class Lattice(object):
             self.dynamics = self.kawasaki
         else:
             raise ValueError('The only options for dynamics are "Glauber" or "Kawasaki". Please input either of these')
-        #print(type(lattice))
+
         
+        #print(type(lattice))
+
         if type(lattice) == np.ndarray:#'numpy.ndarray':
             if lattice.shape == (N,N):
                 #print("yeye")
@@ -91,7 +94,6 @@ class Lattice(object):
         #print(self.lattice)
             
         
-    
 
     def circle_generate(self):
 
@@ -121,7 +123,8 @@ class Lattice(object):
         Genera un reticolo con spin SU (+1) all'interno e spin GIU (-1) solo sui bordi da spessore variabile.
         """
 
-        spessore = 2
+        spessore = 4  #spessore del bordo
+        
 
         # partiamo da un reticolo tutto a +1
         a = np.ones((self.N, self.N))
@@ -140,6 +143,7 @@ class Lattice(object):
 
        
     def halved_generate(self):
+
         """
         Generates "halved" lattice, which has half of the lattice 1 and the other half -1.
         This approximates a ground state for kawisaki dynamics
@@ -152,7 +156,6 @@ class Lattice(object):
         a : numpy array
             halved (NxN) array
         """
-
 
         a = np.hstack((np.ones((self.N**2)//2),np.ones((self.N**2)//2)*-1))
         if (self.N**2)%2 !=0:
@@ -176,8 +179,12 @@ class Lattice(object):
         a : numpy array
             uiform (NxN) array
         """
+
         a = np.random.choice((1,-1), size=[self.N,self.N], replace=True, p=[0.5,0.5])
         return a
+
+
+
     
     def ground_generate(self):
 
@@ -193,7 +200,6 @@ class Lattice(object):
         a : numpy array
             uniform (NxN) array
         """
-
 
         #a = np.rint(np.random.uniform(0,1,(self.N,self.N))).astype(int)
         #a = np.where(a == 1,a,-1)
@@ -221,7 +227,7 @@ class Lattice(object):
         #find energy corresponding to this point wrt the nearest neighbours
         E_init = self.compute_E(flip_coords)
         
-        #change in E  if flipped is defined by -2*init_E (proven in my notes)
+        #change in E  if flipped is defined by -2*init_E (proven in my notes)  QUANTITA ENERGIA PER FLIPPARE UNO SPIN
         delta_E = -2*E_init
 
         # if energy efficient, change
@@ -243,68 +249,110 @@ class Lattice(object):
     def kawasaki(self):
 
         """
-        Function to update the klattice with kawasaki dynamics
+        Function to update the lattice with kawasaki dynamics
 
         Parameters
         ----------
 
         Returns
         -------
-
         """
 
 
-        #get two different coordinates on grid
-        #check not nearest neighbours (probabily a quicker way to do this
-        #but will happen very rarely so doesn't matter much
-        coords_same = True
-        while coords_same:
-            flip_coords_1 = self.rand_flip_coords()
-            flip_coords_2 = self.rand_flip_coords()
-            if not np.array_equal(flip_coords_1,flip_coords_2):
-                coords_same = False
+        # #get two different coordinates on grid
+        # #check not nearest neighbours (probabily a quicker way to do this
+        # #but will happen very rarely so doesn't matter much
+        # coords_same = True
+        # while coords_same:
+        #     flip_coords_1 = self.rand_flip_coords()
+        #     flip_coords_2 = self.rand_flip_coords()
+        #     if not np.array_equal(flip_coords_1,flip_coords_2):
+        #         coords_same = False
                 
-        #if lattice values are identical then theres no point in evaluating them
-        if self.lattice[flip_coords_1[0],flip_coords_1[1]] == self.lattice[flip_coords_2[0],flip_coords_2[1]]:
-            return
+        # #if lattice values are identical then theres no point in evaluating them
+        # if self.lattice[flip_coords_1[0],flip_coords_1[1]] == self.lattice[flip_coords_2[0],flip_coords_2[1]]:
+        #     return
 
-        #if nearest neighbours
-        elif abs(np.sum(flip_coords_1 - flip_coords_2)) == 1 and abs(
-                np.sum(flip_coords_1[0] - flip_coords_2[0])) <= 1 and abs(
-                np.sum(flip_coords_1[1] - flip_coords_2[1])) <= 1:
+        # #if nearest neighbours
+        # elif abs(np.sum(flip_coords_1 - flip_coords_2)) == 1 and abs(
+        #         np.sum(flip_coords_1[0] - flip_coords_2[0])) <= 1 and abs(
+        #         np.sum(flip_coords_1[1] - flip_coords_2[1])) <= 1:
 
 
-            #compute initial energies of each point wrt the nearest neighbours
-            E_init_1 = self.compute_E(flip_coords_1)
-            E_init_2 = self.compute_E(flip_coords_2)
+        #     #compute initial energies of each point wrt the nearest neighbours
+        #     E_init_1 = self.compute_E(flip_coords_1)
+        #     E_init_2 = self.compute_E(flip_coords_2)
 
-            # find the change in energy if points are swapped.
-            # Same as glauber but with added factor of 4 (proven in my notes)
-            delta_E = (-2 * E_init_1 - 2 * E_init_2) + 4
+        #     # find the change in energy if points are swapped.
+        #     # Same as glauber but with added factor of 4 (proven in my notes)
+        #     delta_E = (-2 * E_init_1 - 2 * E_init_2) + 4
 
 
         
+        # else:
+        #     #compute change in energy the same way as glauber dynamics (adding the two individual points)
+        #     E_init_1 = self.compute_E(flip_coords_1)
+        #     E_init_2 = self.compute_E(flip_coords_2)
+        #     delta_E = -2*E_init_1 -2*E_init_2
+            
+            
+        # #if energy efficient, change
+        # if delta_E<0:
+        #     self.lattice[flip_coords_1[0],flip_coords_1[1]] = -1*self.lattice[flip_coords_1[0],flip_coords_1[1]]
+        #     self.lattice[flip_coords_2[0],flip_coords_2[1]] = -1*self.lattice[flip_coords_2[0],flip_coords_2[1]]
+        #     return
+        
+
+        # #if energy innefficient, change with probability related to temperature
+        # else:
+        #     p = min(1,np.exp(-self.beta*delta_E))
+        #     if np.random.uniform(0,1,1)<=p:
+        #         self.lattice[flip_coords_1[0],flip_coords_1[1]] = -1*self.lattice[flip_coords_1[0],flip_coords_1[1]]
+        #         self.lattice[flip_coords_2[0],flip_coords_2[1]] = -1*self.lattice[flip_coords_2[0],flip_coords_2[1]]
+        #     return
+        #               questa funzione scambia 2 spin anche se non vicini, ergo c'è un teletrasporto che non ha senso fisico
+
+
+        # seleziono il primo spin a caso
+        coords_1 = self.rand_flip_coords()
+        r1, c1 = coords_1[0], coords_1[1]
+        
+        # seleziono un vicino a caso (0: Su, 1: Giù, 2: Sinistra, 3: Destra), il 4 è ESCLUSO
+        # Usiamo il modulo % self.N per i bordi periodici (effetto Pac-Man)
+        direzione = np.random.randint(0, 4)
+        if direzione == 0:
+            r2, c2 = (r1 - 1) % self.N, c1
+        elif direzione == 1:
+            r2, c2 = (r1 + 1) % self.N, c1
+        elif direzione == 2:
+            r2, c2 = r1, (c1 - 1) % self.N
         else:
-            #compute change in energy the same way as glauber dynamics (adding the two individual points)
-            E_init_1 = self.compute_E(flip_coords_1)
-            E_init_2 = self.compute_E(flip_coords_2)
-            delta_E = -2*E_init_1 -2*E_init_2
-            
-            
+            r2, c2 = r1, (c1 + 1) % self.N
+
+        # se spin sono identici, lo scambio non fa nulla
+        if self.lattice[r1, c1] == self.lattice[r2, c2]:
+            return
+
+        # calcolo delle energie iniziali per i due punti scelti
+        E_init_1 = self.compute_E([r1, c1])
+        E_init_2 = self.compute_E([r2, c2])
+
+        # Variazione di energia per lo scambio di due PRIMI VICINI
+        #(include il fattore di correzione +4 che fa sì che il legame condiviso non venga contato siccome i 2 spin sono necessariamente diversi)
+        delta_E = (-2 * E_init_1 - 2 * E_init_2) + 4
+
+
         #if energy efficient, change
-        if delta_E<0:
-            self.lattice[flip_coords_1[0],flip_coords_1[1]] = -1*self.lattice[flip_coords_1[0],flip_coords_1[1]]
-            self.lattice[flip_coords_2[0],flip_coords_2[1]] = -1*self.lattice[flip_coords_2[0],flip_coords_2[1]]
-            return
-        
+        if delta_E < 0:
+            self.lattice[r1, c1] *= -1
+            self.lattice[r2, c2] *= -1
 
-        #if energy innefficient, change with probability related to temperature
+        #if energy innefficient, change with probability related to temperature   
         else:
-            p = min(1,np.exp(-self.beta*delta_E))
-            if np.random.uniform(0,1,1)<=p:
-                self.lattice[flip_coords_1[0],flip_coords_1[1]] = -1*self.lattice[flip_coords_1[0],flip_coords_1[1]]
-                self.lattice[flip_coords_2[0],flip_coords_2[1]] = -1*self.lattice[flip_coords_2[0],flip_coords_2[1]]
-            return
+            p = min(1, np.exp(-self.beta * delta_E))
+            if np.random.uniform(0, 1) <= p:
+                self.lattice[r1, c1] *= -1
+                self.lattice[r2, c2] *= -1
 
         
         
@@ -516,7 +564,7 @@ class Lattice(object):
         Funzione modificata per scattare foto durante l'evoluzione
         """
 
-        sweeps_to_photo = [0, 50, 100, 500, 1000]   #sweeps da fotografare
+        sweeps_to_photo = [0, 50, 100, 500, 10000]   #sweeps da fotografare
 
         # 1. foto configurazione iniziale (sweep 0)
         if plot_anim and 0 in sweeps_to_photo:
@@ -547,21 +595,6 @@ class Lattice(object):
         # 3. foto finale
         if plot_anim and num_tot_sweeps in sweeps_to_photo:
             self.save_photo(f"{num_tot_sweeps:03d}_finale")
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
 
 
 
