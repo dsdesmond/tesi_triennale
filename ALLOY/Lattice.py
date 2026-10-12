@@ -81,8 +81,8 @@ class Lattice(object):
         elif lattice == "uniform":
             #assume uniform
             self.lattice = self.uniform_generate()
-        elif lattice == "ground":
-            self.lattice = self.ground_generate()
+        # elif lattice == "ground":  è una configurazione che non esiste nel caso della lega binaria
+        #     self.lattice = self.ground_generate()
         elif lattice == "halved":
             self.lattice = self.halved_generate()
         elif lattice == "circle":
@@ -96,50 +96,168 @@ class Lattice(object):
             
         
 
+    def calc_num_B(self):
+        """
+        Calcola il numero esatto (intero) di atomi di tipo B in base alla concentrazione richiesta.
+        Garantisce che, in caso di concentrazioni estreme, sia sempre 
+        presente almeno 1 atomo della minoranza per mantenere il senso fisico della lega.
+        """
+        N_tot = self.N ** 2
+        N_B = int(round(N_tot * self.conc_B))
+        
+        # Se l'utente ha chiesto una concentrazione > 0, ma l'arrotondamento 
+        # l'ha portata a 0 (es: 100 atomi al 0.1%), forziamo almeno 1 atomo B.
+        if self.conc_B > 0.0 and N_B == 0:
+            N_B = 1
+            
+        # Allo stesso modo, se la concentrazione è < 1 (es: 99.9%), ma l'arrotondamento
+        # satura la griglia, togliamo un atomo B per garantire almeno 1 atomo A.
+        elif self.conc_B < 1.0 and N_B == N_tot:
+            N_B = N_tot - 1
+            
+        return N_B
+
+    
+
+    # def circle_generate(self):
+
+    #     """
+    #     Genera un reticolo con tutti spin SU (+1) e un cerchio centrale di spin GIU (-1).
+    #     """
+
+    #     # partiamo da un reticolo tutto a +1
+    #     a = np.ones((self.N, self.N))
+        
+    #     # raggio è un quarto della grandezza totale
+    #     centro = self.N // 2
+    #     raggio = self.N // 4  
+        
+        
+    #     for i in range(self.N):
+    #         for j in range(self.N):
+    #             # equazione del cerchio: (x-x0)^2 + (y-y0)^2 <= r^2
+    #             if (i - centro)**2 + (j - centro)**2 <= raggio**2:
+    #                 a[i, j] = -1
+                    
+    #     return a
+
+
     def circle_generate(self):
 
         """
-        Genera un reticolo con tutti spin SU (+1) e un cerchio centrale di spin GIU (-1).
+        Genera un cerchio centrale di spin -1 (atomi B).
+        Gli atomi vengono assegnati partendo dal centro esatto e riempiendo a raggiera in modo radiale, garantendo
+        matematicamente che il numero di atomi B sia esattamente quello richiesto dalla concentrazione.
         """
-
-        # partiamo da un reticolo tutto a +1
+        # reticolo di atomi A (+1)
         a = np.ones((self.N, self.N))
         
-        # raggio è un quarto della grandezza totale
-        centro = self.N // 2
-        raggio = self.N // 4  
+        # numero atomi B che ci servono esattamente
+        N_B = self.calc_num_B()
         
+        # Se la concentrazione è zero, non serve fare nulla
+        if N_B == 0:
+            return a
+            
+        # Calcoliamo il centro della griglia
+        # Usiamo (N-1)/2 per centrare perfettamente sia su griglie pari che dispari
+        centro = (self.N - 1) / 2.0
         
+        # costruiamo una lista che conterrà (distanza_dal_centro, coordinata_x, coordinata_y)
+        distanze = []
         for i in range(self.N):
             for j in range(self.N):
-                # equazione del cerchio: (x-x0)^2 + (y-y0)^2 <= r^2
-                if (i - centro)**2 + (j - centro)**2 <= raggio**2:
-                    a[i, j] = -1
-                    
+                dist_quadrata = (i - centro)**2 + (j - centro)**2
+                distanze.append((dist_quadrata, i, j))
+                
+        # ordiniamo la lista dalla distanza minore (il centro) alla maggiore (i bordi)
+        distanze.sort(key=lambda x: x[0])
+        
+        # Coloriamo di -1 esattamente i primi N_B punti della lista
+        for k in range(N_B):
+            _, i, j = distanze[k]  # Il _ serve a ignorare la distanza, ci servono solo i e j (conosco distanze[k])
+            a[i, j] = -1
+            
         return a
+
+
+
+    # def edges_generate(self):
+
+    #     """
+    #     Genera un reticolo con spin SU (+1) all'interno e spin GIU (-1) solo sui bordi da spessore variabile.
+    #     """
+
+    #     spessore = 4  #spessore del bordo
+        
+
+    #     # partiamo da un reticolo tutto a +1
+    #     a = np.ones((self.N, self.N))
+        
+    #     # q -1 prime e ultime righe in base allo spessore
+    #     a[0:spessore, :] = -1
+    #     a[-spessore:, :] = -1
+        
+    #     # a -1 prime e ultime colonne in base allo spessore
+    #     a[:, 0:spessore] = -1
+    #     a[:, -spessore:] = -1
+        
+    #     return a
+
 
     def edges_generate(self):
-
         """
-        Genera un reticolo con spin SU (+1) all'interno e spin GIU (-1) solo sui bordi da spessore variabile.
+        Genera atomi B (-1) sui bordi del reticolo, 
+        procedendo per anelli quadrati concentrici dall'esterno verso l'interno. 
+        Gli anelli vengono riempiti in senso orario. 
+        Se gli atomi finiscono a metà, l'anello interno si interrompe, creando uno spessore asimmetrico continuo.
         """
-
-        spessore = 4  #spessore del bordo
-        
-
-        # partiamo da un reticolo tutto a +1
         a = np.ones((self.N, self.N))
+        N_B = self.calc_num_B()
         
-        # q -1 prime e ultime righe in base allo spessore
-        a[0:spessore, :] = -1
-        a[-spessore:, :] = -1
+        if N_B == 0:
+            return a
+            
+        layer = 0
         
-        # a -1 prime e ultime colonne in base allo spessore
-        a[:, 0:spessore] = -1
-        a[:, -spessore:] = -1
-        
+        # Continuiamo a sfogliare anelli finché abbiamo atomi B e non superiamo il centro
+        while N_B > 0 and layer < self.N / 2.0:
+            min_idx = int(layer)
+            max_idx = int(self.N - 1 - layer)
+            
+            if min_idx == max_idx:
+                # Caso limite: se il reticolo è dispari ed è rimasto solo il pixel centrale
+                if N_B > 0:
+                    a[min_idx, min_idx] = -1
+                    N_B -= 1
+            else:
+                # Lato superiore (da sinistra a destra)
+                for j in range(min_idx, max_idx + 1):
+                    if N_B > 0:
+                        a[min_idx, j] = -1
+                        N_B -= 1
+                        
+                # Lato destro (dall'alto verso il basso, escludendo l'angolo già fatto)
+                for i in range(min_idx + 1, max_idx + 1):
+                    if N_B > 0:
+                        a[i, max_idx] = -1
+                        N_B -= 1
+                        
+                # Lato inferiore (da destra a sinistra, escludendo l'angolo già fatto)
+                for j in range(max_idx - 1, min_idx - 1, -1):
+                    if N_B > 0:
+                        a[max_idx, j] = -1
+                        N_B -= 1
+                        
+                # Lato sinistro (dal basso verso l'alto, escludendo gli angoli)
+                for i in range(max_idx - 1, min_idx, -1):
+                    if N_B > 0:
+                        a[i, min_idx] = -1
+                        N_B -= 1
+                        
+            layer += 1
+            
         return a
-
 
 
        
@@ -187,25 +305,25 @@ class Lattice(object):
 
 
     
-    def ground_generate(self):
+    # def ground_generate(self):        configurazione che non esiste nel caso della lega binaria
 
-        """
-        Generates "ground" lattice, where every point on the lattice is set to 1,
-        approximating the ground state for Grauber dynamics.
+    #     """
+    #     Generates "ground" lattice, where every point on the lattice is set to 1,
+    #     approximating the ground state for Grauber dynamics.
 
-        Parameters
-        ----------
+    #     Parameters
+    #     ----------
 
-        Returns
-        -------
-        a : numpy array
-            uniform (NxN) array
-        """
+    #     Returns
+    #     -------
+    #     a : numpy array
+    #         uniform (NxN) array
+    #     """
 
-        #a = np.rint(np.random.uniform(0,1,(self.N,self.N))).astype(int)
-        #a = np.where(a == 1,a,-1)
-        a = np.ones((self.N,self.N))
-        return a
+    #     #a = np.rint(np.random.uniform(0,1,(self.N,self.N))).astype(int)
+    #     #a = np.where(a == 1,a,-1)
+    #     a = np.ones((self.N,self.N))
+    #     return a
     
 
     

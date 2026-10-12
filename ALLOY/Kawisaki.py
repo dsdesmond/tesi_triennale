@@ -5,7 +5,7 @@ from Lattice import Lattice
 
 
 #def main(T_low, N = 50, num_sweeps = 1000, plot_anim = False, T_high = None, stepsize = None):
-def main(T, N, num_sweeps, plot_anim = False, start_config = "uniform"):
+def main(T, N, num_sweeps, plot_anim = False, start_config = "uniform", conc_B = 0.5):
     """
     Function to run Kawasaki dynamics on an ising lattice.
 
@@ -134,9 +134,14 @@ def main(T, N, num_sweeps, plot_anim = False, start_config = "uniform"):
 #         main(float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), eval(sys.argv[4]), float(sys.argv[5]), float(sys.argv[6]))
 
 if __name__ == "__main__":
-    if len(sys.argv) != 6:
-        print("Uso corretto: python3 Kawasaki.py <T> <N> <num_sweeps> <Plot(True/False)> <Configurazione>")
-        sys.exit(1)
+    # if len(sys.argv) != 6:
+    #     print("Uso corretto: python3 Kawasaki.py <T> <N> <num_sweeps> <Plot(True/False)> <Configurazione>")
+    #     sys.exit(1)
 
-    # Legge i 5 parametri passedi via CLI
-    main(float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), eval(sys.argv[4]), sys.argv[5])
+    if len(sys.argv) != 7:
+            print("Uso corretto: python3 Kawasaki.py <T> <N> <num_sweeps> <Plot(True/False)> <Configurazione> <conc_B (tra 0 e 1)>")
+            sys.exit(1)
+    
+
+    # Legge i 6 parametri passedi via CLI
+    main(float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), eval(sys.argv[4]), sys.argv[5], float(sys.argv[6]))
