@@ -17,7 +17,7 @@ class Lattice(object):
     """
 
     #def __init__(self, N, T, dynamics = "Glauber", lattice = None):
-    def __init__(self, N, T, dynamics = "Glauber", lattice = None, J = -1.0):
+    def __init__(self, N, T, dynamics = "Glauber", lattice = None, J = -1.0, conc_B = 0.5):
         """
         Initialisation function for Lattice class.
 
@@ -45,6 +45,8 @@ class Lattice(object):
         self.T = T
         self.beta = 1/self.T
         self.J = J
+        self.conc_B = conc_B
+
 
         self.energies = []
         self.magnetisation = []
@@ -261,46 +263,89 @@ class Lattice(object):
 
 
        
+    # def halved_generate(self):
+
+    #     """
+    #     Generates "halved" lattice, which has half of the lattice 1 and the other half -1.
+    #     This approximates a ground state for kawisaki dynamics
+
+    #     Parameters
+    #     ----------
+
+    #     Returns
+    #     -------
+    #     a : numpy array
+    #         halved (NxN) array
+    #     """
+
+    #     a = np.hstack((np.ones((self.N**2)//2),np.ones((self.N**2)//2)*-1))
+    #     if (self.N**2)%2 !=0:
+    #         a = np.hstack((a,[1]))
+    #     a = np.reshape(a, (self.N,self.N))
+    #     return a
+
+    
     def halved_generate(self):
-
         """
-        Generates "halved" lattice, which has half of the lattice 1 and the other half -1.
-        This approximates a ground state for kawisaki dynamics
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        a : numpy array
-            halved (NxN) array
+        Simula una lega con separazione di fase netta sopra-sotto.
+        Genera un blocco compatto di atomi B sul fondo del reticolo.
+        Garantisce che il numero di atomi B corrisponda alla concentrazione richiesta.
         """
 
-        a = np.hstack((np.ones((self.N**2)//2),np.ones((self.N**2)//2)*-1))
-        if (self.N**2)%2 !=0:
-            a = np.hstack((a,[1]))
-        a = np.reshape(a, (self.N,self.N))
-        return a
+        # Creiamo un array "piatto" (1D) di N^2 elementi, tutti a +1 (atomi A)
+        a_piatto = np.ones(self.N**2)
+        
+        N_B = self.calc_num_B()
+        
+        # se ci servono atomi B, li mettiamo alla FINE dell'array
+        # In NumPy, gli indici negativi contano dalla fine. 
+        # a_piatto[-N_B:] seleziona esattamente gli ultimi N_B elementi.
+        if N_B > 0:
+            a_piatto[-N_B:] = -1
+            
+        # rimodelliamo l'array piatto nella nostra griglia (N x N), così gli elementi alla fine dell'array
+        # riempiranno le righe in basso della matrice
+        return a_piatto.reshape((self.N, self.N))
+
 
         
-        
+
+    # def uniform_generate(self):
+
+    #     """
+    #     Generates "uniform" lattice, where each point on the lattice has equal probability of being -1 or 1
+
+    #     Parameters
+    #     ----------
+
+    #     Returns
+    #     -------
+    #     a : numpy array
+    #         uiform (NxN) array
+    #     """
+
+    #     a = np.random.choice((1,-1), size=[self.N,self.N], replace=True, p=[0.5,0.5])
+    #     return a
+
 
     def uniform_generate(self):
-
         """
-        Generates "uniform" lattice, where each point on the lattice has equal probability of being -1 or 1
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        a : numpy array
-            uiform (NxN) array
+        Genera una distribuzione casuale uniforme di atomi B.
+        Come nel caso halved_generate usiamo un array monodimensionale e poi lo mescoliamo con np.random.shuffle
         """
-
-        a = np.random.choice((1,-1), size=[self.N,self.N], replace=True, p=[0.5,0.5])
-        return a
+        
+        a = np.ones(self.N ** 2)
+        
+        N_B = self.calc_num_B()
+        
+        # li mettiamo tutti all'inizio
+        if N_B > 0:
+            a[:N_B] = -1
+            # mescolo
+            np.random.shuffle(a)
+            
+        # rimodello nella grigli N x N
+        return a.reshape((self.N, self.N))
 
 
 
