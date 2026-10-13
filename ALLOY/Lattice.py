@@ -699,6 +699,8 @@ class Lattice(object):
 
 
 
+
+
     def save_photo(self, step_name):
 
         """
@@ -715,13 +717,43 @@ class Lattice(object):
             os.makedirs(cartella)
             
         plt.clf()
-        plt.imshow(self.lattice, cmap='coolwarm', vmin=-1, vmax=1)
+
+
+        # Creiamo un'immagine RGB vuota (griglia NxN, con 3 valori per Rosso, Verde, Blu)
+        img = np.zeros((self.N, self.N, 3))
+        
+        # Coloriamo gli atomi base (usando valori RGB tra 0 e 1)
+        # Atomi A (+1) -> Rame
+        img[self.lattice == 1] = [0.710, 0.396, 0.235]
+        # Atomi B (-1) -> Zinco
+        img[self.lattice == -1] = [0.663, 0.706, 0.737]
+        
+        # Colore per la lega formata -> Ottone (giallo dorato)
+        colore_lega = [0.831, 0.690, 0.298]
+        
+        # cerchiamo l'unità periodica della lega: +1 sopra, -1 sotto
+        for i in range(self.N):
+            for j in range(self.N):
+                # Troviamo l'indice della riga sotto (usando % per i bordi periodici)
+                i_sotto = (i + 1) % self.N
+                
+                # Se l'atomo corrente è +1 e quello sotto è -1
+                if self.lattice[i, j] == 1 and self.lattice[i_sotto, j] == -1:
+                    # Coloriamo di viola ENTRAMBI i pixel della coppia
+                    img[i, j] = colore_lega
+                    img[i_sotto, j] = colore_lega
+        
+        # mostriamo l'immagine
+        plt.imshow(img)
         
         plt.title(f"{self.dynamics.__name__} | {self.nome_config} | T={self.T} | Sweep: {step_name}")
         
         # Salvo i vari step tutti dentro la cartella della temperatura
         percorso_file = f"{cartella}/step_{step_name}.png"
         plt.savefig(percorso_file)
+
+
+
 
 
     def run(self, wait_sweeps=100, num_tot_sweeps=1000, plot_anim=True):
