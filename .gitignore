@@ -6,3 +6,7 @@ venv*/
 *.o
 *.mod
 .DS_Store
+ISING/simulation_photo/
+*Zone.Identifier
+ALLOY/simulation_photo/
+ALLOY/test_en/

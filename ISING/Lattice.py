@@ -536,12 +536,12 @@ class Lattice(object):
 
         """
         Salva la foto in sottocartelle ordinate per: 
-        Dinamica / Configurazione / Temperatura
+        Dinamica / Configurazione / Temperatura / N
         """
         import os
         
         # percorso file
-        cartella = os.path.join("simulation_photo", self.dynamics.__name__, self.nome_config, f"T_{self.T}")
+        cartella = os.path.join("simulation_photo", self.dynamics.__name__, self.nome_config, f"T_{self.T}", f"N_{self.N}")
         
         # creo cartelle se non esistono
         if not os.path.exists(cartella):
@@ -550,9 +550,9 @@ class Lattice(object):
         plt.clf()
         plt.imshow(self.lattice, cmap='coolwarm', vmin=-1, vmax=1)
         
-        plt.title(f"{self.dynamics.__name__} | {self.nome_config} | T={self.T} | Sweep: {step_name}")
+        plt.title(f"{self.dynamics.__name__} | {self.nome_config} | T={self.T} | N={self.N} | Sweep: {step_name}")
         
-        # Salvo i vari step tutti dentro la cartella della temperatura
+        # Salvo i vari step tutti dentro la cartella N
         percorso_file = f"{cartella}/step_{step_name}.png"
         plt.savefig(percorso_file)
 
@@ -565,7 +565,7 @@ class Lattice(object):
         """
 
         # lista sweep intermedi, UNICA COSA DA MODIFICARE (non serve mettere 0 e l'ultimo sweep)
-        sweeps_intermedi = [200, 500, 2000, 5000]
+        sweeps_intermedi = [200, 500, 1000, 2000, 5000, 7000]
 
         # FOTO INIZIALE
         if plot_anim:

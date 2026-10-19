@@ -705,12 +705,12 @@ class Lattice(object):
 
         """
         Salva la foto in sottocartelle ordinate per: 
-        Dinamica / Configurazione / Temperatura
+        Dinamica / Configurazione / Temperatura / N / Concentrazione_B
         """
         import os
         
         # percorso file
-        cartella = os.path.join("simulation_photo", self.dynamics.__name__, self.nome_config, f"T_{self.T}")
+        cartella = os.path.join("simulation_photo", self.dynamics.__name__, self.nome_config, f"T_{self.T}", f"N_{self.N}", f"conc_{self.conc_B}")
         
         # creo cartelle se non esistono
         if not os.path.exists(cartella):
@@ -746,7 +746,7 @@ class Lattice(object):
         # mostriamo l'immagine
         plt.imshow(img)
         
-        plt.title(f"{self.dynamics.__name__} | {self.nome_config} | T={self.T} | Sweep: {step_name}")
+        plt.title(f"{self.dynamics.__name__} | {self.nome_config} | T={self.T} | N={self.N} | conc={self.conc_B} | Sweep: {step_name}")
         
         # Salvo i vari step tutti dentro la cartella della temperatura
         percorso_file = f"{cartella}/step_{step_name}.png"
