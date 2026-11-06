@@ -123,7 +123,7 @@ class Lattice(object):
         Genera un reticolo con spin SU (+1) all'interno e spin GIU (-1) solo sui bordi da spessore variabile.
         """
 
-        spessore = 4  #spessore del bordo
+        spessore = 10  #spessore del bordo
         
 
         # partiamo da un reticolo tutto a +1
@@ -565,7 +565,8 @@ class Lattice(object):
         """
 
         # lista sweep intermedi, UNICA COSA DA MODIFICARE (non serve mettere 0 e l'ultimo sweep)
-        sweeps_intermedi = [200, 500, 1000, 2000, 5000, 7000]
+        sweeps_intermedi = [10, 25, 50, 75, 100, 200, 500, 1000, 2000, 5000, 7000, 12000, 
+                            16000, 21000, 25000, 27000, 31000, 37000, 42000, 46000]
 
         # FOTO INIZIALE
         if plot_anim:
