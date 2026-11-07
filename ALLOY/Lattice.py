@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-
+from matplotlib.colors import ListedColormap
 
 
 
@@ -719,32 +719,29 @@ class Lattice(object):
         plt.clf()
 
 
-        # Creiamo un'immagine RGB vuota (griglia NxN, con 3 valori per Rosso, Verde, Blu)
-        img = np.zeros((self.N, self.N, 3))
+        # somma dei primi vicini (con bordi periodici tramite np.roll)
+        vicini_su = np.roll(self.lattice, 1, axis=0)
+        vicini_giu = np.roll(self.lattice, -1, axis=0)
+        vicini_dx = np.roll(self.lattice, 1, axis=1)
+        vicini_sx = np.roll(self.lattice, -1, axis=1)
         
-        # Coloriamo gli atomi base (usando valori RGB tra 0 e 1)
-        # Atomi A (+1) -> Rame
-        img[self.lattice == 1] = [0.710, 0.396, 0.235]
-        # Atomi B (-1) -> Zinco
-        img[self.lattice == -1] = [0.663, 0.706, 0.737]
+        # energia di interazione locale
+        interazione = self.lattice * (vicini_su + vicini_giu + vicini_dx + vicini_sx)
         
-        # Colore per la lega formata -> Ottone (giallo dorato)
-        colore_lega = [0.831, 0.690, 0.298]
+        # creazione della matrice dei colori
+        color_matrix = np.zeros_like(self.lattice, dtype=int)
+        color_matrix[(self.lattice == 1) & (interazione >= 0)] = 1   # Rame
+        color_matrix[(self.lattice == -1) & (interazione >= 0)] = 2  # Zinco
+        color_matrix[interazione <= -2] = 3                          # Ottone (Lega)
         
-        # cerchiamo l'unità periodica della lega: +1 sopra, -1 sotto
-        for i in range(self.N):
-            for j in range(self.N):
-                # Troviamo l'indice della riga sotto (usando % per i bordi periodici)
-                i_sotto = (i + 1) % self.N
-                
-                # Se l'atomo corrente è +1 e quello sotto è -1
-                if self.lattice[i, j] == 1 and self.lattice[i_sotto, j] == -1:
-                    # Coloriamo di viola ENTRAMBI i pixel della coppia
-                    img[i, j] = colore_lega
-                    img[i_sotto, j] = colore_lega
+        # mappatura dei colori esatti RGB
+        cmap_3colors = ListedColormap([
+            [0.710, 0.396, 0.235], # 1: Rame
+            [0.663, 0.706, 0.737], # 2: Zinco
+            [0.831, 0.690, 0.298]  # 3: Ottone
+        ])
         
-        # mostriamo l'immagine
-        plt.imshow(img)
+        plt.imshow(color_matrix, cmap=cmap_3colors, interpolation='none', vmin=1, vmax=3)
         
         plt.title(f"{self.dynamics.__name__} | {self.nome_config} | T={self.T} | N={self.N} | conc={self.conc_B} | Sweep: {step_name}")
         
@@ -752,6 +749,34 @@ class Lattice(object):
         percorso_file = f"{cartella}/step_{step_name}.png"
         plt.savefig(percorso_file)
 
+
+# # Creiamo un'immagine RGB vuota (griglia NxN, con 3 valori per Rosso, Verde, Blu)
+#         img = np.zeros((self.N, self.N, 3))
+        
+#         # Coloriamo gli atomi base (usando valori RGB tra 0 e 1)
+#         # Atomi A (+1) -> Rame
+#         img[self.lattice == 1] = [0.710, 0.396, 0.235]
+#         # Atomi B (-1) -> Zinco
+#         img[self.lattice == -1] = [0.663, 0.706, 0.737]
+        
+#         # Colore per la lega formata -> Ottone (giallo dorato)
+#         colore_lega = [0.831, 0.690, 0.298]
+        
+#         # cerchiamo l'unità periodica della lega: +1 sopra, -1 sotto
+#         for i in range(self.N):
+#             for j in range(self.N):
+#                 # Troviamo l'indice della riga sotto (usando % per i bordi periodici)
+#                 i_sotto = (i + 1) % self.N
+                
+#                 # Se l'atomo corrente è +1 e quello sotto è -1
+#                 if self.lattice[i, j] == 1 and self.lattice[i_sotto, j] == -1:
+#                     # Coloriamo di viola ENTRAMBI i pixel della coppia
+#                     img[i, j] = colore_lega
+#                     img[i_sotto, j] = colore_lega
+        
+#         # mostriamo l'immagine
+#         plt.imshow(img)
+                            #vecchio modo di visualizzare la lega, sbagliato perchè guardava l'orientamento
 
 
 
