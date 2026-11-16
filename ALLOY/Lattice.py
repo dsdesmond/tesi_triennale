@@ -789,7 +789,8 @@ class Lattice(object):
         """
 
         # lista sweep intermedi, UNICA COSA DA MODIFICARE (non serve mettere 0 e l'ultimo sweep)
-        sweeps_intermedi = [200, 500, 1000, 2000, 5000, 7000, 12000, 16000, 21000, 25000, 27000, 31000, 37000]
+        sweeps_intermedi = [10, 25, 50, 100, 200, 500, 1000, 2000, 5000, 7000, 10000, 
+                            12000, 16000, 21000, 25000, 27000, 31000, 37000]
 
         # FOTO INIZIALE
         if plot_anim:
