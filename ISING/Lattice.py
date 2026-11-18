@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-
+import os
 
 
 
@@ -368,8 +368,11 @@ class Lattice(object):
         -------
 
         """
-        M = np.sum(self.lattice)
+        # Magnetizzazione per sito o normalizzata: compresa tra +1 e -1
+        M = np.sum(self.lattice)/ self.N**2
+
         self.magnetisation.append(M)
+
         if return_val:
             return M
         
@@ -664,3 +667,37 @@ class Lattice(object):
     #                 print(i/self.sweep_size)
     #         #run dynamics
     #         self.dynamics()
+
+    # Per disegnare subito il grafico della magnetizzazione per sito e salvarlo
+    def plot_magnetisation(self, num_tot_sweeps):
+    
+        # Cartella in cui salvare i grafici
+        cartella = "magnetisation"
+        os.makedirs(cartella, exist_ok=True)
+
+        # Nome del file
+        nome_file = (
+            f"magn_{self.nome_config}_{self.T}_"
+            f"{self.N}_{num_tot_sweeps}.png"
+        )
+
+        percorso = os.path.join(cartella, nome_file)
+
+        # Grafico della magnetizzazione per sito
+        plt.figure(figsize=(8, 5))
+
+        plt.plot(self.sweep_list, self.magnetisation, color="darkblue", linewidth=1.5)
+
+        plt.xlabel("Numero di sweep")
+        plt.ylabel("Magnetizzazione per sito")
+        plt.title(
+            f"Magnetizzazione | {self.nome_config} | "
+            f"T={self.T} | N={self.N}"
+        )
+
+        plt.ylim(-1.05, 1.05)
+        plt.grid(True)
+
+        # Salvataggio
+        plt.savefig(percorso, dpi=300, bbox_inches="tight")
+        plt.close()

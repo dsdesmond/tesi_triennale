@@ -77,6 +77,7 @@ def main(T, N, num_sweeps, plot_anim = False, start_config = "uniform"):
 
     L = Lattice(N, T, dynamics="Glauber", lattice=start_config)
     L.run(wait_sweeps=wait_sweeps, num_tot_sweeps=num_sweeps, plot_anim=plot_anim)
+    L.plot_magnetisation(num_sweeps)
     lattices = [L]
     T_arr = [T]  # Serve per non far rompere la funzione di salvataggio np.savetxt più in basso
 
