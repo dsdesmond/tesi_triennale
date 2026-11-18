@@ -82,6 +82,7 @@ def main(T, N, num_sweeps, plot_anim = False, start_config = "uniform", conc_B =
 
     L = Lattice(N, T, dynamics = "Kawasaki", lattice = start_config, conc_B = conc_B)
     L.run(wait_sweeps = wait_sweeps, num_tot_sweeps = num_sweeps, plot_anim = plot_anim)
+    L.plot_staggered_magnetisation(num_sweeps)
 
     lattices = [L]
     T_arr = [T]  # Serve a np.savetxt in fondo per salvare la temperatura T

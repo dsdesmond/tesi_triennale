@@ -2,7 +2,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-
+import os
 
 
 
@@ -50,6 +50,7 @@ class Lattice(object):
 
         self.energies = []
         self.magnetisation = []
+        self.staggered_magnetisation = []
         self.sweep_list = []
         #N**2 is the required length of time between visualisations as in the lecture notes
         self.sweep_size = self.N**2
@@ -539,6 +540,35 @@ class Lattice(object):
             return M
         
 
+
+
+    def find_staggered_magnetisation(self, return_val=False):
+        """
+        Funzione per trovare la magnetizzazione alternata per sito (o normalizzata)
+        del reticolo
+                Parameters
+                ----------
+        
+                Returns
+                -------
+        """
+
+        # Indici delle righe e delle colonne
+        i, j = np.indices((self.N, self.N))
+
+        # +1 su una sottorete, -1 sull'altra
+        sottoreticoli = (-1) ** (i + j)
+
+        # Magnetizzazione alternata normalizzata
+        Ms = np.sum(self.lattice * sottoreticoli) / self.N**2
+
+        self.staggered_magnetisation.append(Ms)
+
+        if return_val:
+            return Ms
+
+
+
         
     def rand_flip_coords(self):
         """
@@ -808,7 +838,9 @@ class Lattice(object):
                 if i % (self.sweep_size * 10) == 0 and i > wait_sweeps * self.sweep_size:
                     self.sweep_list.append(i / self.sweep_size)
                     self.find_magnetisation()
+                    self.find_staggered_magnetisation()
                     self.compute_tot_E()
+
                 
                 if i % (self.sweep_size * 100) == 0:
                     print(f"Sweep completati: {sweep_corrente}/{num_tot_sweeps}")
@@ -888,3 +920,39 @@ class Lattice(object):
     #                 print(i/self.sweep_size)
     #         #run dynamics
     #         self.dynamics()
+
+    def plot_staggered_magnetisation(self, num_tot_sweeps):
+
+        # Cartella dei grafici
+        cartella = "magnetisation"
+        os.makedirs(cartella, exist_ok=True)
+
+        # Nome che comprende anche la concentrazione
+        nome_base = (
+            f"magn_stag_{self.nome_config}_{self.T}_{self.N}_{self.conc_B}_{num_tot_sweeps}"
+        )
+
+        percorso = os.path.join(cartella, nome_base + ".png")
+
+        # Valore assoluto del parametro d'ordine
+        Ms = np.abs(self.staggered_magnetisation)
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+
+        ax.plot(
+            self.sweep_list, Ms,
+            color="red", linewidth=2
+        )
+
+        ax.set_xlabel("Numero di sweep")
+        ax.set_ylabel("Magnetizzazione alternata per sito |ms|")
+        ax.set_title(
+            f"Magnetizzazione alternata | {self.nome_config} | "
+            f"T={self.T} | N={self.N} | conc={self.conc_B}"
+        )
+
+        ax.set_ylim(-0.02, 1.05)
+        ax.grid(True, alpha=0.3, linewidth=0.8)
+
+        fig.savefig(percorso, dpi=300, bbox_inches="tight")
+        plt.close(fig)
